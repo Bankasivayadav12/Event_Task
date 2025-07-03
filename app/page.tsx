@@ -1,16 +1,41 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
-const API_KEY = "ZQpAm1jeTmh4lKrx7K8ihYylvLMZdte5";
+const API_KEY = 'ZQpAm1jeTmh4lKrx7K8ihYylvLMZdte5';
 const EVENTS_PER_PAGE = 6;
 
+interface Venue {
+  name?: string;
+  country?: { name?: string };
+}
+
+interface EventImage {
+  url: string;
+  width: number;
+}
+
+interface Event {
+  id: string;
+  name: string;
+  images: EventImage[];
+  dates: {
+    start: {
+      dateTime: string;
+    };
+  };
+  _embedded: {
+    venues: Venue[];
+  };
+}
+
 export default function HomePage() {
-  const [events, setEvents] = useState([]);
-  const [country, setCountry] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [country, setCountry] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [sortBy, setSortBy] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
@@ -18,9 +43,9 @@ export default function HomePage() {
     async function fetchEvents() {
       setLoading(true);
       try {
-        const url = new URL("https://app.ticketmaster.com/discovery/v2/events.json");
-        url.searchParams.set("apikey", API_KEY);
-        url.searchParams.set("size", "50");
+        const url = new URL('https://app.ticketmaster.com/discovery/v2/events.json');
+        url.searchParams.set('apikey', API_KEY);
+        url.searchParams.set('size', '50');
 
         const res = await fetch(url.toString());
         const data = await res.json();
@@ -31,7 +56,7 @@ export default function HomePage() {
           setEvents([]);
         }
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error('Error fetching events:', error);
         setEvents([]);
       }
       setLoading(false);
@@ -40,14 +65,11 @@ export default function HomePage() {
     fetchEvents();
   }, []);
 
-  // Filter by country and date
-  const filteredEvents = events.filter((e: any) => {
-    const eventDate = new Date(e.dates?.start?.dateTime || "");
+  const filteredEvents = events.filter((e) => {
+    const eventDate = new Date(e.dates?.start?.dateTime || '');
 
     const countryMatch = country
-      ? e._embedded?.venues?.[0]?.country?.name
-          ?.toLowerCase()
-          .includes(country.toLowerCase())
+      ? e._embedded?.venues?.[0]?.country?.name?.toLowerCase().includes(country.toLowerCase())
       : true;
 
     const startDateMatch = startDate ? eventDate >= new Date(startDate) : true;
@@ -56,26 +78,24 @@ export default function HomePage() {
     return countryMatch && startDateMatch && endDateMatch;
   });
 
-  // Sort by name/date
-  const sortedEvents = [...filteredEvents].sort((a: any, b: any) => {
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
     const aDate = new Date(a.dates.start.dateTime);
     const bDate = new Date(b.dates.start.dateTime);
 
     switch (sortBy) {
-      case "name-asc":
+      case 'name-asc':
         return a.name.localeCompare(b.name);
-      case "name-desc":
+      case 'name-desc':
         return b.name.localeCompare(a.name);
-      case "date-asc":
+      case 'date-asc':
         return aDate.getTime() - bDate.getTime();
-      case "date-desc":
+      case 'date-desc':
         return bDate.getTime() - aDate.getTime();
       default:
         return 0;
     }
   });
 
-  // Pagination
   const totalPages = Math.ceil(sortedEvents.length / EVENTS_PER_PAGE);
   const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
   const currentEvents = sortedEvents.slice(startIndex, startIndex + EVENTS_PER_PAGE);
@@ -136,8 +156,8 @@ export default function HomePage() {
         <p className="text-center text-red-500 text-lg font-medium">No events found.</p>
       ) : (
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {currentEvents.map((event: any) => {
-            const bestImage = event.images?.sort((a: any, b: any) => b.width - a.width)[0];
+          {currentEvents.map((event) => {
+            const bestImage = event.images?.sort((a, b) => b.width - a.width)[0];
 
             return (
               <div
@@ -145,25 +165,27 @@ export default function HomePage() {
                 className="p-5 bg-white/80 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transform transition duration-300 border border-gray-200 backdrop-blur-md"
               >
                 {bestImage && (
-                  <img
+                  <Image
                     src={bestImage.url}
                     alt={event.name}
+                    width={800}
+                    height={400}
                     className="w-full h-48 object-cover rounded-xl mb-4"
                   />
                 )}
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">{event.name}</h2>
                 <p className="text-gray-600 mb-1">
-                  📅{" "}
+                  📅{' '}
                   {new Date(event.dates.start.dateTime).toLocaleString(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
                   })}
                 </p>
                 <p className="text-gray-600 mb-1">
-                  📍 {event._embedded?.venues?.[0]?.name || "Unknown Venue"}
+                  📍 {event._embedded?.venues?.[0]?.name || 'Unknown Venue'}
                 </p>
                 <p className="text-gray-600">
-                  🌍 {event._embedded?.venues?.[0]?.country?.name || "Unknown"}
+                  🌍 {event._embedded?.venues?.[0]?.country?.name || 'Unknown'}
                 </p>
               </div>
             );
